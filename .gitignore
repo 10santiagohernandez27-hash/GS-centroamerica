@@ -1,0 +1,14 @@
+# Environment
+.env
+*.env.local
+
+# Docker volumes
+n8n_data/
+ollama_data/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
