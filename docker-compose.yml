@@ -5,17 +5,16 @@ services:
     image: n8nio/n8n:latest
     container_name: barbershop-n8n
     restart: unless-stopped
+    env_file:
+      - .env
     ports:
       - "5678:5678"
     environment:
-      - N8N_BASIC_AUTH_ACTIVE=true
-      - N8N_BASIC_AUTH_USER=admin
-      - N8N_BASIC_AUTH_PASSWORD=barbershop2024
       - N8N_HOST=0.0.0.0
       - N8N_PORT=5678
-      - N8N_PROTOCOL=http
-      - WEBHOOK_URL=http://localhost:5678/
-      - N8N_ENCRYPTION_KEY=tu-clave-secreta-cambiar-esto
+      - N8N_PROTOCOL=https
+      - WEBHOOK_URL=${N8N_URL}/
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY:-cambiar-esta-clave-secreta}
       - GENERIC_TIMEZONE=America/Costa_Rica
       - TZ=America/Costa_Rica
     volumes:
