@@ -1,0 +1,622 @@
+{
+  "name": "Barber Shop - Chatbot WhatsApp con IA (Groq)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "={{$request.method}}",
+        "path": "barbershop-whatsapp",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "b1b2c3d4-2222-4000-a000-000000000001",
+      "name": "WhatsApp Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [220, 460],
+      "webhookId": "barbershop-whatsapp"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.query['hub.mode'] }}",
+                    "rightValue": "subscribe",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputLabel": "Verificación"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body?.entry?.[0]?.changes?.[0]?.value?.messages?.[0] }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "object",
+                      "operation": "exists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputLabel": "Mensaje"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "none"
+        }
+      },
+      "id": "b1b2c3d4-2222-4000-a000-000000000002",
+      "name": "Tipo de Request",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [440, 460]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.query['hub.challenge'] }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "b1b2c3d4-2222-4000-a000-000000000003",
+      "name": "Responder Verificación",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [660, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "OK",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "b1b2c3d4-2222-4000-a000-000000000004",
+      "name": "Responder OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [660, 500]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extraer datos del mensaje de WhatsApp\nconst entry = $input.first().json.body.entry[0];\nconst changes = entry.changes[0];\nconst value = changes.value;\nconst message = value.messages[0];\nconst contact = value.contacts ? value.contacts[0] : {};\n\nconst phoneNumberId = value.metadata.phone_number_id;\nconst from = message.from; // número del cliente\nconst msgType = message.type; // text, audio, image, etc.\nconst timestamp = message.timestamp;\nconst clientName = contact.profile ? contact.profile.name : 'Cliente';\nconst messageId = message.id;\n\nlet userMessage = '';\nlet mediaId = null;\n\nif (msgType === 'text') {\n  userMessage = message.text.body;\n} else if (msgType === 'audio') {\n  mediaId = message.audio.id;\n  userMessage = '__AUDIO__';\n} else if (msgType === 'image') {\n  userMessage = message.image.caption || 'El cliente envió una imagen';\n} else if (msgType === 'interactive') {\n  if (message.interactive.type === 'button_reply') {\n    userMessage = message.interactive.button_reply.title;\n  } else if (message.interactive.type === 'list_reply') {\n    userMessage = message.interactive.list_reply.title;\n  }\n} else {\n  userMessage = `El cliente envió un mensaje de tipo: ${msgType}`;\n}\n\nreturn [{\n  json: {\n    phoneNumberId: phoneNumberId,\n    from: from,\n    clientName: clientName,\n    messageType: msgType,\n    userMessage: userMessage,\n    mediaId: mediaId,\n    messageId: messageId,\n    sessionId: `whatsapp_${from}`,\n    timestamp: timestamp\n  }\n}];"
+      },
+      "id": "b1b2c3d4-2222-4000-a000-000000000005",
+      "name": "Extraer Datos WhatsApp",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [660, 660]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.messageType }}",
+                    "rightValue": "audio",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputLabel": "Audio"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.messageType }}",
+                    "rightValue": "audio",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notEquals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputLabel": "Texto/Otro"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b1b2c3d4-2222-4000-a000-000000000006",
+      "name": "Es Audio?",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [880, 660]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://graph.facebook.com/v21.0/{{ $json.mediaId }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $credentials.httpHeaderAuth.value }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b1b2c3d4-2222-4000-a000-000000000007",
+      "name": "Obtener URL de Audio",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1100, 520],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "META_HEADER_CREDENTIALS_ID",
+          "name": "Meta WhatsApp Token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $credentials.httpHeaderAuth.value }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "b1b2c3d4-2222-4000-a000-000000000008",
+      "name": "Descargar Audio WA",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1320, 520],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "META_HEADER_CREDENTIALS_ID",
+          "name": "Meta WhatsApp Token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/audio/transcriptions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $credentials.httpHeaderAuth.value }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "data"
+            },
+            {
+              "parameterType": "formData",
+              "name": "model",
+              "value": "whisper-large-v3"
+            },
+            {
+              "parameterType": "formData",
+              "name": "language",
+              "value": "es"
+            },
+            {
+              "parameterType": "formData",
+              "name": "response_format",
+              "value": "json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b1b2c3d4-2222-4000-a000-000000000009",
+      "name": "Transcribir Audio (Groq Whisper)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1540, 520],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "GROQ_HEADER_CREDENTIALS_ID",
+          "name": "Groq API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Preparar texto transcrito del audio para el agente\nconst transcription = $input.first().json.text || 'No pude entender el audio';\n\n// Recuperar datos originales del mensaje\nconst originalData = $('Extraer Datos WhatsApp').first().json;\n\nreturn [{\n  json: {\n    phoneNumberId: originalData.phoneNumberId,\n    from: originalData.from,\n    clientName: originalData.clientName,\n    userMessage: transcription,\n    messageType: 'audio_transcribed',\n    sessionId: originalData.sessionId\n  }\n}];"
+      },
+      "id": "b1b2c3d4-2222-4000-a000-000000000010",
+      "name": "Preparar Audio Transcrito",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1760, 520]
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "=Eres el asistente virtual de inteligencia artificial de Barber Shop, una barberia profesional ubicada en Costa Rica.\n\n## TU PERSONALIDAD\n- Eres amigable, profesional y con buena onda\n- Hablas en espanol de Costa Rica (pura vida, mae, tuanis)\n- Eres eficiente y vas al grano pero con calidez\n- Usas emojis moderadamente para ser mas expresivo\n- Si el cliente habla en otro idioma, responde en ese idioma\n- IMPORTANTE: Mantén tus respuestas CORTAS. Maximo 3-4 oraciones por respuesta a menos que te pidan informacion detallada.\n\n## INFORMACION DE LA BARBERIA\n\nNombre: Barber Shop\nDireccion: Casa 27, Condominio Privado Puerta Madera, Purral, Guadalupe, San Jose, Costa Rica\nHorario: Lunes a Domingo de 8:00 AM a 6:00 PM\nDuracion de cada cita: 45 minutos aproximadamente\n\n## BARBEROS DISPONIBLES\n1. Santiago - Especialista en fades y degradados modernos\n2. Steven - Experto en barba y disenos artisticos\n3. Jarell - Maestro en tintes y alisados\n\n## SERVICIOS Y PRECIOS (en colones costarricenses)\nCorte de cabello (clasico, fade, degradado, moderno): 4,000 colones\nBarba (recorte, diseno, afeitado): 3,000 colones\nCejas (diseno y perfilado): 2,000 colones\nCombo Completo (corte + barba + cejas): 7,500 colones\nTinte de cabello: 8,000 colones\nAlisado: 6,000 colones\nDiseno artistico / Arte en cabello: 5,000 colones\nTratamiento capilar: 4,500 colones\nLavado y secado: 2,500 colones\n\n## FLUJO DE RESERVA DE CITAS\nCuando un cliente quiera agendar una cita, recopila esta informacion en orden:\n\n1. Nombre del cliente (si no lo tienes ya)\n2. Servicio(s) deseado(s) - Muestra la lista de servicios con precios\n3. Barbero preferido - Pregunta si tiene preferencia por Santiago, Steven o Jarell\n4. Fecha deseada - Pregunta que dia quiere venir\n5. Hora deseada - Ofrece horarios entre 8:00 AM y 5:15 PM\n6. Numero de telefono - Para contacto y confirmacion\n\nUna vez tengas toda la info, presenta un resumen:\n\nRESUMEN DE TU CITA\nCliente: [nombre]\nServicio: [servicio]\nPrecio: [precio]\nBarbero: [barbero]\nFecha: [fecha]\nHora: [hora]\nTelefono: [telefono]\n\nDespues de confirmar, usa la herramienta guardar_cita para registrar la cita.\n\n## REGLAS IMPORTANTES\n- Horarios disponibles: 8:00, 8:45, 9:30, 10:15, 11:00, 11:45, 12:30, 1:15, 2:00, 2:45, 3:30, 4:15, 5:00, 5:15\n- Si preguntan por un horario fuera de rango, sugiere el mas cercano\n- Si no tiene preferencia de barbero, asigna al que tenga menos citas\n- Siempre confirma la cita antes de guardarla\n- Si no sabes algo, dile que se comunique directamente por telefono\n- Para cancelar o modificar citas, pide el nombre y fecha de la cita original\n\n## COMANDOS ESPECIALES\n- Primer mensaje o saludo: Da la bienvenida y pregunta en que puedes ayudar\n- Pregunta por precios: Muestra la tabla de precios\n- Pregunta por ubicacion: Comparte la direccion completa\n- Pregunta por horarios: Informa el horario\n- Quiere agendar: Inicia el flujo de reserva\n\n## CONTEXTO DEL MENSAJE ACTUAL\n- Nombre del cliente: {{ $json.clientName }}\n- Numero de WhatsApp: {{ $json.from }}\n- Tipo de mensaje: {{ $json.messageType }}\n- Session ID: {{ $json.sessionId }}"
+        }
+      },
+      "id": "b1b2c3d4-2222-4000-a000-000000000011",
+      "name": "Agente IA Barberia",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [1400, 800]
+    },
+    {
+      "parameters": {
+        "model": "llama-3.3-70b-versatile",
+        "options": {
+          "temperature": 0.7,
+          "maxTokens": 1024
+        }
+      },
+      "id": "b1b2c3d4-2222-4000-a000-000000000012",
+      "name": "Groq Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [1280, 1020],
+      "credentials": {
+        "groqApi": {
+          "id": "GROQ_CREDENTIALS_ID",
+          "name": "Groq API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.sessionId }}",
+        "contextWindowLength": 20
+      },
+      "id": "b1b2c3d4-2222-4000-a000-000000000013",
+      "name": "Memoria de Conversacion",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.2,
+      "position": [1400, 1020]
+    },
+    {
+      "parameters": {
+        "name": "guardar_cita",
+        "description": "Guarda una nueva cita en el sistema. Usa esta herramienta SOLO cuando el cliente confirme su cita. Envia un JSON con los campos: cliente, servicio, barbero, fecha, hora, telefono, precio.",
+        "jsCode": "const staticData = $getWorkflowStaticData('global');\n\nif (!staticData.citas) {\n  staticData.citas = [];\n}\n\nconst queryStr = $input.first().json.query || '{}';\nlet citaData;\ntry {\n  citaData = JSON.parse(queryStr);\n} catch(e) {\n  citaData = { raw: queryStr };\n}\n\nconst nuevaCita = {\n  id: `CITA-${Date.now()}`,\n  cliente: citaData.cliente || citaData.nombre || 'Sin nombre',\n  servicio: citaData.servicio || 'Sin especificar',\n  barbero: citaData.barbero || 'Sin preferencia',\n  fecha: citaData.fecha || 'Sin especificar',\n  hora: citaData.hora || 'Sin especificar',\n  telefono: citaData.telefono || 'Sin especificar',\n  precio: citaData.precio || 'Sin especificar',\n  estado: 'confirmada',\n  creadaEn: new Date().toISOString()\n};\n\nstaticData.citas.push(nuevaCita);\n\nreturn `Cita guardada exitosamente con ID: ${nuevaCita.id}. Cliente: ${nuevaCita.cliente}, Servicio: ${nuevaCita.servicio}, Barbero: ${nuevaCita.barbero}, Fecha: ${nuevaCita.fecha}, Hora: ${nuevaCita.hora}.`;"
+      },
+      "id": "b1b2c3d4-2222-4000-a000-000000000014",
+      "name": "Guardar Cita",
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "typeVersion": 1,
+      "position": [1520, 1020]
+    },
+    {
+      "parameters": {
+        "name": "consultar_citas",
+        "description": "Consulta las citas existentes para verificar disponibilidad. Busca por fecha, barbero o cliente.",
+        "jsCode": "const staticData = $getWorkflowStaticData('global');\nconst citas = staticData.citas || [];\nconst queryStr = $input.first().json.query || '';\n\nconst citasActivas = citas.filter(c => c.estado === 'confirmada');\n\nif (citasActivas.length === 0) {\n  return 'No hay citas registradas. Todos los horarios estan disponibles.';\n}\n\nlet resultado = citasActivas;\nif (queryStr) {\n  resultado = citasActivas.filter(c => {\n    const query = queryStr.toLowerCase();\n    return (c.fecha && c.fecha.toLowerCase().includes(query)) ||\n           (c.barbero && c.barbero.toLowerCase().includes(query)) ||\n           (c.cliente && c.cliente.toLowerCase().includes(query));\n  });\n}\n\nif (resultado.length === 0) {\n  return `No se encontraron citas para \"${queryStr}\". Todos los horarios estan disponibles.`;\n}\n\nconst horariosOcupados = resultado.map(c => \n  `- ${c.fecha} a las ${c.hora}: ${c.cliente} con ${c.barbero} (${c.servicio})`\n).join('\\n');\n\nconst horariosBase = ['8:00', '8:45', '9:30', '10:15', '11:00', '11:45', '12:30', '13:15', '14:00', '14:45', '15:30', '16:15', '17:00'];\nconst horasOcupadas = resultado.map(c => c.hora);\nconst horasDisponibles = horariosBase.filter(h => !horasOcupadas.includes(h));\n\nreturn `Citas encontradas:\\n${horariosOcupados}\\n\\nHorarios disponibles: ${horasDisponibles.join(', ') || 'Ninguno disponible'}`;"
+      },
+      "id": "b1b2c3d4-2222-4000-a000-000000000015",
+      "name": "Consultar Citas",
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "typeVersion": 1,
+      "position": [1640, 1020]
+    },
+    {
+      "parameters": {
+        "name": "cancelar_cita",
+        "description": "Cancela una cita existente buscando por nombre del cliente o ID de cita.",
+        "jsCode": "const staticData = $getWorkflowStaticData('global');\nconst citas = staticData.citas || [];\nconst queryStr = ($input.first().json.query || '').toLowerCase();\n\nconst index = citas.findIndex(c => {\n  if (c.estado !== 'confirmada') return false;\n  return (c.cliente && c.cliente.toLowerCase().includes(queryStr)) ||\n         (c.id && c.id.toLowerCase().includes(queryStr));\n});\n\nif (index === -1) {\n  return `No se encontro una cita activa para \"${queryStr}\". Verifica el nombre o ID.`;\n}\n\nconst citaCancelada = citas[index];\ncitas[index].estado = 'cancelada';\ncitas[index].canceladaEn = new Date().toISOString();\n\nreturn `Cita cancelada: Cliente: ${citaCancelada.cliente}, Servicio: ${citaCancelada.servicio}, Fecha: ${citaCancelada.fecha}, Hora: ${citaCancelada.hora}, Barbero: ${citaCancelada.barbero}`;"
+      },
+      "id": "b1b2c3d4-2222-4000-a000-000000000016",
+      "name": "Cancelar Cita",
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "typeVersion": 1,
+      "position": [1760, 1020]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Formatear y enviar respuesta por WhatsApp\nconst aiResponse = $input.first().json.output || $input.first().json.text || 'Lo siento, no pude procesar tu mensaje. Podrias intentar de nuevo?';\n\n// Obtener datos del mensaje original\nlet phoneNumberId, from;\ntry {\n  const originalData = $('Extraer Datos WhatsApp').first().json;\n  phoneNumberId = originalData.phoneNumberId;\n  from = originalData.from;\n} catch(e) {\n  phoneNumberId = null;\n  from = null;\n}\n\n// WhatsApp tiene limite de 4096 chars por mensaje\nlet finalMessage = aiResponse;\nif (finalMessage.length > 4000) {\n  finalMessage = finalMessage.substring(0, 4000) + '\\n\\n... (mensaje recortado)';\n}\n\nreturn [{\n  json: {\n    phoneNumberId: phoneNumberId,\n    to: from,\n    text: finalMessage\n  }\n}];"
+      },
+      "id": "b1b2c3d4-2222-4000-a000-000000000017",
+      "name": "Formatear Respuesta",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1700, 800]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v21.0/{{ $json.phoneNumberId }}/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $credentials.httpHeaderAuth.value }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"messaging_product\": \"whatsapp\",\n  \"recipient_type\": \"individual\",\n  \"to\": \"{{ $json.to }}\",\n  \"type\": \"text\",\n  \"text\": {\n    \"preview_url\": false,\n    \"body\": {{ JSON.stringify($json.text) }}\n  }\n}",
+        "options": {}
+      },
+      "id": "b1b2c3d4-2222-4000-a000-000000000018",
+      "name": "Enviar WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1920, 800],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "META_HEADER_CREDENTIALS_ID",
+          "name": "Meta WhatsApp Token"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "WhatsApp Webhook": {
+      "main": [
+        [
+          {
+            "node": "Tipo de Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tipo de Request": {
+      "main": [
+        [
+          {
+            "node": "Responder Verificación",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder OK",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Extraer Datos WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer Datos WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Es Audio?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Es Audio?": {
+      "main": [
+        [
+          {
+            "node": "Obtener URL de Audio",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Agente IA Barberia",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obtener URL de Audio": {
+      "main": [
+        [
+          {
+            "node": "Descargar Audio WA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Descargar Audio WA": {
+      "main": [
+        [
+          {
+            "node": "Transcribir Audio (Groq Whisper)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcribir Audio (Groq Whisper)": {
+      "main": [
+        [
+          {
+            "node": "Preparar Audio Transcrito",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Audio Transcrito": {
+      "main": [
+        [
+          {
+            "node": "Agente IA Barberia",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Agente IA Barberia",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Memoria de Conversacion": {
+      "ai_memory": [
+        [
+          {
+            "node": "Agente IA Barberia",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Guardar Cita": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente IA Barberia",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consultar Citas": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente IA Barberia",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cancelar Cita": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente IA Barberia",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agente IA Barberia": {
+      "main": [
+        [
+          {
+            "node": "Formatear Respuesta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatear Respuesta": {
+      "main": [
+        [
+          {
+            "node": "Enviar WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "",
+    "timezone": "America/Costa_Rica"
+  },
+  "staticData": {
+    "global": {
+      "citas": []
+    }
+  },
+  "pinData": {}
+}
