@@ -13,8 +13,8 @@
       "position": [220, 460],
       "credentials": {
         "telegramApi": {
-          "id": "TELEGRAM_CREDENTIALS_ID",
-          "name": "Telegram Bot API"
+          "id": "DnOfu9wSV4vwDNCY",
+          "name": "Telegram Barber Shop Bot"
         }
       }
     },
@@ -123,8 +123,8 @@
       "position": [700, 280],
       "credentials": {
         "telegramApi": {
-          "id": "TELEGRAM_CREDENTIALS_ID",
-          "name": "Telegram Bot API"
+          "id": "DnOfu9wSV4vwDNCY",
+          "name": "Telegram Barber Shop Bot"
         }
       }
     },
@@ -147,8 +147,8 @@
       "position": [920, 280],
       "credentials": {
         "telegramApi": {
-          "id": "TELEGRAM_CREDENTIALS_ID",
-          "name": "Telegram Bot API"
+          "id": "DnOfu9wSV4vwDNCY",
+          "name": "Telegram Barber Shop Bot"
         }
       }
     },
@@ -200,8 +200,8 @@
       "position": [1140, 280],
       "credentials": {
         "httpHeaderAuth": {
-          "id": "GROQ_HEADER_CREDENTIALS_ID",
-          "name": "Groq API Header"
+          "id": "PzO2ErYxR8VaV2hd",
+          "name": "Groq Header Auth"
         }
       }
     },
@@ -262,8 +262,8 @@
       "position": [1080, 700],
       "credentials": {
         "groqApi": {
-          "id": "GROQ_CREDENTIALS_ID",
-          "name": "Groq API"
+          "id": "Rb8DjoxItVKDvRqy",
+          "name": "Groq Barber Shop"
         }
       }
     },
@@ -341,8 +341,8 @@
       "position": [1720, 480],
       "credentials": {
         "telegramApi": {
-          "id": "TELEGRAM_CREDENTIALS_ID",
-          "name": "Telegram Bot API"
+          "id": "DnOfu9wSV4vwDNCY",
+          "name": "Telegram Barber Shop Bot"
         }
       }
     },
@@ -362,8 +362,8 @@
       "position": [520, 180],
       "credentials": {
         "telegramApi": {
-          "id": "TELEGRAM_CREDENTIALS_ID",
-          "name": "Telegram Bot API"
+          "id": "DnOfu9wSV4vwDNCY",
+          "name": "Telegram Barber Shop Bot"
         }
       }
     },
